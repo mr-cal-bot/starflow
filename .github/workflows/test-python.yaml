@@ -155,7 +155,7 @@ jobs:
             # The test-command-prefix input is intentionally template-expanded rather
             # than passed via an env var: callers use shell syntax (e.g. quotes) in
             # the value, which would be mangled by word splitting.
-            if ! ${{ inputs.test-command-prefix }} make test-coverage UV_PROJECT_ENVIRONMENT="${python_dirname}" PYTEST_ADDOPTS="-m 'not slow ${MARKERS:+and ($MARKERS)}'" UV_PYTHON="${python_version}"
+            if ! ${{ inputs.test-command-prefix }} make test-coverage UV_PROJECT_ENVIRONMENT="${python_dirname}" PYTEST_ADDOPTS="-m 'not slow ${MARKERS:+and ($MARKERS)}'" UV_PYTHON="${python_version}" JUNIT_XML="results/junit-${python_version}.xml"
             then
               exit_code=1
               echo "::error title=TESTS FAILED::Tests failed with Python ${python_version}"
@@ -173,6 +173,13 @@ jobs:
           name=$(gh api "repos/${GITHUB_REPOSITORY}/actions/jobs/${{ job.check_run_id }}" --jq '.name')
           caller="${name%% / *}"
           echo "caller-job=${caller}" >> "$GITHUB_OUTPUT"
+      - name: Upload test results
+        if: ${{ inputs.source-files == 'true' && !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: test-results-${{ steps.ctx.outputs.caller-job }}-fast-${{ join(matrix.platform, '-') }}
+          overwrite: true
+          path: results/junit-*.xml
       - name: Upload test coverage
         if: ${{ inputs.source-files == 'true' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -253,6 +260,13 @@ jobs:
           name=$(gh api "repos/${GITHUB_REPOSITORY}/actions/jobs/${{ job.check_run_id }}" --jq '.name')
           caller="${name%% / *}"
           echo "caller-job=${caller}" >> "$GITHUB_OUTPUT"
+      - name: Upload test results
+        if: ${{ inputs.source-files == 'true' && !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: test-results-${{ steps.ctx.outputs.caller-job }}-slow-${{ join(matrix.platform, '-') }}-${{ matrix.python-version }}
+          overwrite: true
+          path: results/junit.xml
       - name: Upload test coverage
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: ${{ inputs.source-files == 'true' }}
@@ -334,6 +348,13 @@ jobs:
           name=$(gh api "repos/${GITHUB_REPOSITORY}/actions/jobs/${{ job.check_run_id }}" --jq '.name')
           caller="${name%% / *}"
           echo "caller-job=${caller}" >> "$GITHUB_OUTPUT"
+      - name: Upload test results
+        if: ${{ inputs.source-files == 'true' && !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: test-results-${{ steps.ctx.outputs.caller-job }}-lowest-py${{ inputs.lowest-python-version }}
+          overwrite: true
+          path: results/junit.xml
       - name: Upload test coverage
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: ${{ inputs.source-files == 'true' }}
